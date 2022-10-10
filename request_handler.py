@@ -44,9 +44,6 @@ class HandleRequests(BaseHTTPRequestHandler):
     # Here's a method on the class that overrides the parent's method.
     # It handles any GET request.
     def do_GET(self):
-        self._set_headers(200)
-        response = {}  # Default response
-
         # Parse the URL and capture the tuple that is returned
         (resource, id) = self.parse_url(self.path)
 
@@ -54,29 +51,72 @@ class HandleRequests(BaseHTTPRequestHandler):
             if id is not None:
                 response = get_single_animal(id)
 
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Animal {id} is out playing right now" }
+
             else:
                 response = get_all_animals()
+
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Animal {id} is out playing right now" }
 
         if resource == "locations":
             if id is not None:
                 response = get_single_location(id)
 
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Location {id} is out playing right now" }
+
             else:
                 response = get_all_locations()
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Location {id} is out playing right now" }
 
         if resource == "employees":
             if id is not None:
                 response = get_single_employee(id)
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Employee {id} is out playing right now" }
 
             else:
                 response = get_all_employees()
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"employee {id} is out playing right now" }
 
         if resource == "customers":
             if id is not None:
                 response = get_single_customer(id)
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Customer {id} is out playing right now" }
 
             else:
                 response = get_all_customers()
+                if response is not None:
+                    self._set_headers(200)
+                else:
+                    self._set_headers(404)
+                    response = { "message": f"Customer {id} is out playing right now" }
 
         
 
@@ -86,7 +126,6 @@ class HandleRequests(BaseHTTPRequestHandler):
     # Here's a method on the class that overrides the parent's method.
     # It handles any POST request.
     def do_POST(self):
-        self._set_headers(201)
         content_len = int(self.headers.get('content-length', 0))
         post_body = self.rfile.read(content_len)
 
@@ -106,8 +145,15 @@ class HandleRequests(BaseHTTPRequestHandler):
             new_entry = create_animal(post_body)
 
         if resource == "locations":
-            new_entry = create_location(post_body)
-
+            
+            if "name" in post_body and "address" in post_body:
+                self._set_headers(201)
+                new_entry = create_location(post_body)
+                
+            else:
+                self._set_headers(400)
+                new_entry = { "message": f'{"name is required" if "name" not in post_body else ""} {"address is required" if "address" not in post_body else ""}'}
+            
         if resource == "employees":
             new_entry = create_employee(post_body)
 
@@ -167,21 +213,22 @@ class HandleRequests(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_DELETE(self):
-    # Set a 204 response code
-        self._set_headers(204)
-
     # Parse the URL
         (resource, id) = self.parse_url(self.path)
 
     # Delete a single animal from the list
         if resource == "animals":
+            self._set_headers(204)
             delete_animal(id)
         if resource == "locations":
+            self._set_headers(204)
             delete_location(id)
         if resource == "employees":
+            self._set_headers(204)
             delete_employee(id)
         if resource == "customers":
-            delete_customer(id)
+            self._set_headers(406)
+            self.wfile.write("Not Allowed!".encode())
 
     # Encode the new animal and send in response
         self.wfile.write("".encode())
@@ -192,7 +239,7 @@ def main():
     """Starts the server on port 8088 using the HandleRequests classF
     """
     host = ''
-    port = 8088
+    port = 8089
     HTTPServer((host, port), HandleRequests).serve_forever()
 
 
